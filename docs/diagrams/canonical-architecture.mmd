@@ -1,0 +1,40 @@
+flowchart TB
+  subgraph ingest [Multimodal Ingest]
+    Text["Text"]
+    Image["Image / Screenshot"]
+    VoiceIn["Voice transcript / ASR"]
+  end
+  subgraph core [OmniForge Core]
+    Norm["Normalize Mission"]
+    Plan["Planner"]
+    Brain["Multi-LLM Brain"]
+    Graph["Async fan-out graph"]
+  end
+  subgraph exec [Agents and Tools]
+    Web["Web"]
+    ApiA["API"]
+    Data["Data / RAG"]
+    Analysis["Analysis"]
+    Vision["Vision"]
+    MCP["MCP bridge"]
+  end
+  subgraph proof [Proof]
+    WF["RoutingDecision waterfall"]
+    Fin["In-repo FinOps"]
+    Gate["In-repo policy gate"]
+  end
+  Text --> Norm
+  Image --> Vision
+  VoiceIn --> Norm
+  Vision --> Norm
+  Norm --> Plan --> Graph
+  Graph --> Brain
+  Brain --> Web
+  Brain --> ApiA
+  Brain --> Data
+  Brain --> Analysis
+  Graph --> MCP
+  Brain --> WF
+  Brain --> Fin
+  Graph --> Synth["Synthesizer"]
+  Synth --> Gate

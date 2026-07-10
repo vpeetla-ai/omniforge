@@ -1,0 +1,30 @@
+:root {
+  --bg0: #0b1220;
+  --bg1: #121a2b;
+  --ink: #e8eefc;
+  --muted: #9aa8c7;
+  --accent: #3dd6c6;
+  --accent2: #f0b429;
+  --line: rgba(232, 238, 252, 0.12);
+  --card: rgba(18, 26, 43, 0.72);
+  --danger: #ff6b7a;
+  --ok: #5dde8a;
+  --font-display: "Fraunces", "Iowan Old Style", Georgia, serif;
+  --font-body: "Sora", "Avenir Next", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  min-height: 100%;
+  color: var(--ink);
+  font-family: var(--font-body);
+  background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(61, 214, 198, 0.18), transparent 55%),
+    radial-gradient(900px 500px at 90% 0%, rgba(240, 180, 41, 0.12), transparent 50%),
+    linear-gradient(165deg, var(--bg0), var(--bg1) 45%, #0a101c);
+}
+a { color: var(--accent); }
+button, input, textarea, select {
+  font: inherit;
+}
