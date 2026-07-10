@@ -45,6 +45,7 @@ export default function HomePage() {
   const [ab, setAb] = useState<Record<string, unknown> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const proofRef = useRef<HTMLElement>(null);
 
   const onFile = useCallback(async (file: File | null) => {
     if (!file) return;
@@ -103,6 +104,9 @@ export default function HomePage() {
       } else {
         setResult(data);
       }
+      requestAnimationFrame(() => {
+        proofRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -124,65 +128,89 @@ export default function HomePage() {
           One multimodal ask fans out across agents and tools. The waterfall proves which model ran each
           step.
         </p>
-        <div className="cta-row">
-          <button className="btn" disabled={loading} onClick={() => ask("routed")}>
-            {loading ? "Routing…" : "Ask"}
-          </button>
-          <button className="btn btn-secondary" disabled={loading} onClick={() => ask("ab")}>
-            Compare A/B
-          </button>
-          <a className="btn-link" href="#proof">
-            See proof
-          </a>
-        </div>
       </header>
 
       <section className="composer" aria-label="Ask composer">
-        <div className="composer-top">
-          <div className="presets" role="group" aria-label="Presets">
-            {PRESETS.map((p) => (
-              <button
-                key={p.id || "free"}
-                type="button"
-                className="chip"
-                data-active={preset === p.id}
-                onClick={() => setPreset(p.id)}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
+        <div className="presets" role="group" aria-label="Demo presets">
+          {PRESETS.map((p) => (
+            <button
+              key={p.id || "free"}
+              type="button"
+              className="chip"
+              data-active={preset === p.id}
+              onClick={() => setPreset(p.id)}
+            >
+              {p.label}
+            </button>
+          ))}
         </div>
+
+        <label className="sr-only" htmlFor="ask-input">
+          Your question
+        </label>
         <textarea
+          id="ask-input"
           className="ask-box"
           rows={5}
           value={text}
           onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && !loading) {
+              e.preventDefault();
+              void ask("routed");
+            }
+          }}
           placeholder="Ask with text — attach a screenshot or use voice if you want."
         />
-        <div className="composer-actions">
-          <button type="button" className="btn btn-secondary" onClick={() => fileRef.current?.click()}>
-            {imageB64 ? "Image attached" : "Add image"}
-          </button>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            hidden
-            onChange={(e) => onFile(e.target.files?.[0] || null)}
-          />
-          <button type="button" className="btn btn-secondary" onClick={startVoice}>
-            {listening ? "Listening…" : "Voice"}
-          </button>
+
+        <div className="composer-bar">
+          <div className="composer-tools">
+            <button type="button" className="btn btn-ghost" onClick={() => fileRef.current?.click()}>
+              {imageB64 ? "Image attached" : "Add image"}
+            </button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={(e) => onFile(e.target.files?.[0] || null)}
+            />
+            <button type="button" className="btn btn-ghost" onClick={startVoice}>
+              {listening ? "Listening…" : "Voice"}
+            </button>
+            {imageB64 ? (
+              <button type="button" className="btn-text" onClick={() => setImageB64(null)}>
+                Clear image
+              </button>
+            ) : null}
+          </div>
+          <div className="composer-submit">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              disabled={loading}
+              onClick={() => ask("ab")}
+            >
+              Compare A/B
+            </button>
+            <button type="button" className="btn btn-primary" disabled={loading} onClick={() => ask("routed")}>
+              {loading ? "Routing…" : "Ask"}
+            </button>
+          </div>
+        </div>
+
+        <div className="composer-meta">
+          <span className="hint">⌘/Ctrl + Enter to ask</span>
           <span className="hint">API · {API.replace("https://", "")}</span>
         </div>
+
         {voice ? <p className="voice">Voice: {voice}</p> : null}
         {error ? <p className="err">{error}</p> : null}
       </section>
 
       {result ? (
         <>
-          <section className="section" id="proof">
+          <section className="section" id="proof" ref={proofRef}>
             <h2>Answer</h2>
             <pre className="answer">{result.answer}</pre>
             <p className="meta">
@@ -233,6 +261,11 @@ export default function HomePage() {
           <li>Text, image, and voice transcript in one ask path</li>
           <li>In-repo FinOps budget + export gate</li>
         </ul>
+        <p className="meta">
+          <a href="https://github.com/vpeetla-ai/omniforge/blob/main/docs/ARCHITECTURE.md">
+            Full architecture doc →
+          </a>
+        </p>
       </section>
     </main>
   );
