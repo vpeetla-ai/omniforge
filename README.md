@@ -138,6 +138,19 @@ cd ui && npm install && NEXT_PUBLIC_API_URL=http://localhost:8080 npm run dev
 
 See [docs/DEPLOY.md](docs/DEPLOY.md). Framework Preset **Other**, Output **`out`**, Root **`ui`**.
 
+## Interview map
+
+**Business function:** Self-contained multimodal multi-agent multi-LLM answer platform (text / image / voice).
+
+Staff+ prep crosswalk — [playbook](https://github.com/vpeetla-ai/ai-architect-interview-playbook) · [study UI](https://ai-architect-interview-playbook-9xs.vercel.app) · [Practice Arena](https://ai-architect-practice-arena.vercel.app) · [org matrix](https://github.com/vpeetla-ai/ai-architecture-portfolio/blob/main/docs/REPO_INTERVIEW_MAP.md). Only entries this repo honestly exercises.
+
+| Category | Entry | Fit |
+|----------|-------|-----|
+| System design | [Agent orchestration](https://ai-architect-interview-playbook-9xs.vercel.app/q/ai-system-design/03-agent-tool-use-orchestration-platform) ([md](https://github.com/vpeetla-ai/ai-architect-interview-playbook/blob/main/ai-system-design/03-agent-tool-use-orchestration-platform.md)) | Planner + specialized agents + MCP tools |
+| System design | [Multimodal search / recommendation](https://ai-architect-interview-playbook-9xs.vercel.app/q/ai-system-design/06-multimodal-search-recommendation-system) ([md](https://github.com/vpeetla-ai/ai-architect-interview-playbook/blob/main/ai-system-design/06-multimodal-search-recommendation-system.md)) | Partial — multimodal ingest/answer, not full recsys |
+| Cloud | [LLM gateway / model router](https://ai-architect-interview-playbook-9xs.vercel.app/q/cloud-architecture/07-llm-gateway-semantic-cache-model-router) ([md](https://github.com/vpeetla-ai/ai-architect-interview-playbook/blob/main/cloud-architecture/07-llm-gateway-semantic-cache-model-router.md)) | In-repo model waterfall / routing |
+| Trade-offs | [Cost vs latency vs safety](https://ai-architect-interview-playbook-9xs.vercel.app/q/scalability-governance-tradeoffs/01-cost-vs-latency-vs-safety) ([md](https://github.com/vpeetla-ai/ai-architect-interview-playbook/blob/main/scalability-governance-tradeoffs/01-cost-vs-latency-vs-safety.md)) | Model choice per step under budget |
+
 ## Docs
 
 - [ARCHITECTURE.md](docs/ARCHITECTURE.md) — full system design
