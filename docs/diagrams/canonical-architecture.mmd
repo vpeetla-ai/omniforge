@@ -2,39 +2,58 @@ flowchart TB
   subgraph ingest [Multimodal Ingest]
     Text["Text"]
     Image["Image / Screenshot"]
-    VoiceIn["Voice transcript / ASR"]
+    VoiceIn["Voice ASR"]
   end
   subgraph core [OmniForge Core]
     Norm["Normalize Mission"]
-    Plan["Planner"]
-    Brain["Multi-LLM Brain"]
-    Graph["Async fan-out graph"]
+    Plan["Planner Agent"]
+    Brain["MultiLLM Brain"]
+    Graph["LangGraph Fan-out"]
   end
   subgraph exec [Agents and Tools]
-    Web["Web"]
-    ApiA["API"]
-    Data["Data / RAG"]
-    Analysis["Analysis"]
-    Vision["Vision"]
-    MCP["MCP bridge"]
+    Web["Web Agent"]
+    ApiA["API Agent"]
+    Data["Data / RAG Agent"]
+    Analysis["Analysis Agent"]
+    Vision["Vision Agent"]
+    MCP["MCP Tool Bridge"]
   end
-  subgraph proof [Proof]
-    WF["RoutingDecision waterfall"]
-    Fin["In-repo FinOps"]
-    Gate["In-repo policy gate"]
+  subgraph memory [Memory]
+    Store["Vector store Qdrant or in-memory"]
+  end
+  subgraph proof [Proof and Control]
+    Waterfall["RoutingDecision log"]
+    Fin["In-repo FinOps ledger"]
+    Gate["In-repo policy HITL gate"]
+    LF["Langfuse optional"]
+  end
+  subgraph out [Answer]
+    Synth["Synthesizer"]
+    VoiceOut["Optional TTS"]
+    UI["Next.js Workbench"]
   end
   Text --> Norm
   Image --> Vision
   VoiceIn --> Norm
   Vision --> Norm
-  Norm --> Plan --> Graph
+  Norm --> Plan
+  Plan --> Graph
   Graph --> Brain
   Brain --> Web
   Brain --> ApiA
   Brain --> Data
   Brain --> Analysis
-  Graph --> MCP
-  Brain --> WF
+  Brain --> MCP
+  Data --> Store
+  Analysis --> Store
+  Web --> Synth
+  ApiA --> Synth
+  Data --> Synth
+  Analysis --> Synth
+  MCP --> Synth
+  Brain --> Waterfall
   Brain --> Fin
-  Graph --> Synth["Synthesizer"]
   Synth --> Gate
+  Synth --> UI
+  Synth --> VoiceOut
+  Graph --> LF
