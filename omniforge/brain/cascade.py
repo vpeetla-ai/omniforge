@@ -22,6 +22,8 @@ _PRICE = {
     "gpt-4o": (2.50, 10.0),
     "claude-sonnet-4-20250514": (3.0, 15.0),
     "claude-haiku": (0.80, 4.0),
+    "gemini-2.0-flash": (0.10, 0.40),
+    "gemini-1.5-flash": (0.075, 0.30),
 }
 
 
@@ -36,6 +38,8 @@ def _cascade_for(bucket: RouteBucket, settings: Settings) -> list[tuple[str, str
         out: list[tuple[str, str]] = []
         if settings.groq_api_key:
             out.append(("groq", settings.omniforge_fast_model))
+        if settings.google_api_key:
+            out.append(("google", settings.omniforge_google_model))
         if settings.openai_api_key:
             out.append(("openai", "gpt-4o-mini"))
         out.append(("mock", "mock"))
@@ -44,6 +48,8 @@ def _cascade_for(bucket: RouteBucket, settings: Settings) -> list[tuple[str, str
         out = []
         if settings.openai_api_key:
             out.append(("openai", settings.omniforge_structured_model))
+        if settings.google_api_key:
+            out.append(("google", settings.omniforge_google_model))
         if settings.anthropic_api_key:
             out.append(("anthropic", "claude-haiku"))
         out.append(("mock", "mock"))
@@ -52,6 +58,8 @@ def _cascade_for(bucket: RouteBucket, settings: Settings) -> list[tuple[str, str
         out = []
         if settings.openai_api_key:
             out.append(("openai", settings.omniforge_vision_model))
+        if settings.google_api_key:
+            out.append(("google", settings.omniforge_google_model))
         if settings.anthropic_api_key:
             out.append(("anthropic", "claude-sonnet-4-20250514"))
         out.append(("mock", "mock"))
@@ -62,6 +70,8 @@ def _cascade_for(bucket: RouteBucket, settings: Settings) -> list[tuple[str, str
         out.append(("anthropic", settings.omniforge_reasoning_model))
     if settings.openai_api_key:
         out.append(("openai", "gpt-4o"))
+    if settings.google_api_key:
+        out.append(("google", settings.omniforge_google_model))
     if settings.groq_api_key:
         out.append(("groq", settings.omniforge_fast_model))
     out.append(("mock", "mock"))
@@ -91,13 +101,17 @@ async def complete(
     t0 = time.perf_counter()
 
     if mode_single_model:
-        provider, model_id = "single", mode_single_model
         if mode_single_model == "mock" or not settings.live:
             text = _mock_complete(step, system, user, bucket)
-            mocked = True
+            mocked, provider, model_id = True, "mock", "mock"
         else:
-            text, mocked = await _try_providers(
-                [("openai", mode_single_model), ("anthropic", mode_single_model), ("groq", mode_single_model)],
+            text, mocked, provider, model_id = await _try_providers(
+                [
+                    ("openai", mode_single_model),
+                    ("anthropic", mode_single_model),
+                    ("google", mode_single_model),
+                    ("groq", mode_single_model),
+                ],
                 system,
                 user,
                 image_b64,
@@ -109,7 +123,7 @@ async def complete(
         candidates = _cascade_for(bucket, settings)
         if not settings.live:
             candidates = [("mock", "mock")]
-        text, mocked, provider, model_id = await _try_providers_named(
+        text, mocked, provider, model_id = await _try_providers(
             candidates, system, user, image_b64, settings, step, bucket
         )
 
@@ -130,34 +144,26 @@ async def complete(
     return LLMResult(text=text, decision=decision)
 
 
-async def _try_providers_named(candidates, system, user, image_b64, settings, step, bucket):
-    text, mocked = await _try_providers(candidates, system, user, image_b64, settings, step, bucket)
-    # find which provider succeeded — _try_providers returns text; track via side channel
-    # For simplicity: if mocked, last is mock; else first non-mock that worked is unknown —
-    # re-run selection: if text starts with [mock, it's mock
-    if mocked or text.startswith("[mock:"):
-        return text, True, "mock", "mock"
-    provider, model_id = candidates[0]
-    return text, False, provider, model_id
-
-
 async def _try_providers(candidates, system, user, image_b64, settings, step, bucket):
     for provider, model_id in candidates:
         if provider == "mock" or model_id == "mock":
-            return _mock_complete(step, system, user, bucket), True
+            return _mock_complete(step, system, user, bucket), True, "mock", "mock"
         try:
             if provider == "openai" and settings.openai_api_key:
                 text = await _openai(settings, model_id, system, user, image_b64)
-                return text, False
+                return text, False, provider, model_id
             if provider == "anthropic" and settings.anthropic_api_key:
                 text = await _anthropic(settings, model_id, system, user, image_b64)
-                return text, False
+                return text, False, provider, model_id
+            if provider == "google" and settings.google_api_key:
+                text = await _google(settings, model_id, system, user, image_b64)
+                return text, False, provider, model_id
             if provider == "groq" and settings.groq_api_key:
                 text = await _groq(settings, model_id, system, user)
-                return text, False
+                return text, False, provider, model_id
         except Exception:
             continue
-    return _mock_complete(step, system, user, bucket), True
+    return _mock_complete(step, system, user, bucket), True, "mock", "mock"
 
 
 async def _openai(settings, model_id, system, user, image_b64):
@@ -223,3 +229,33 @@ async def _groq(settings, model_id, system, user):
         max_tokens=1200,
     )
     return resp.choices[0].message.content or ""
+
+
+async def _google(settings, model_id, system, user, image_b64):
+    """Gemini generateContent via REST — no extra SDK required."""
+    import httpx
+
+    model = model_id or settings.omniforge_google_model
+    url = (
+        f"https://generativelanguage.googleapis.com/v1beta/models/"
+        f"{model}:generateContent?key={settings.google_api_key}"
+    )
+    parts: list[dict] = [{"text": f"{system}\n\n{user}"}]
+    if image_b64:
+        parts.append({"inline_data": {"mime_type": "image/png", "data": image_b64}})
+    payload = {
+        "contents": [{"role": "user", "parts": parts}],
+        "generationConfig": {"maxOutputTokens": 1200},
+    }
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        r = await client.post(url, json=payload)
+        r.raise_for_status()
+        data = r.json()
+    candidates = data.get("candidates") or []
+    if not candidates:
+        raise RuntimeError("google: empty candidates")
+    parts_out = candidates[0].get("content", {}).get("parts") or []
+    texts = [p.get("text", "") for p in parts_out if p.get("text")]
+    if not texts:
+        raise RuntimeError("google: empty text")
+    return "\n".join(texts)

@@ -27,7 +27,7 @@ type AskResponse = {
   mocked: boolean;
 };
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+const API = process.env.NEXT_PUBLIC_API_URL || "https://omniforge-api.onrender.com";
 
 export default function HomePage() {
   const [text, setText] = useState("How should a principal architect route models across web research vs deep analysis?");

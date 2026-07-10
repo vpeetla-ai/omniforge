@@ -1,5 +1,7 @@
 {
-  "framework": "nextjs",
+  "framework": null,
   "buildCommand": "npm run build",
-  "outputDirectory": "out"
+  "installCommand": "npm install",
+  "outputDirectory": "out",
+  "cleanUrls": true
 }

@@ -58,6 +58,7 @@ def metrics():
             "openai": bool(settings.openai_api_key),
             "anthropic": bool(settings.anthropic_api_key),
             "groq": bool(settings.groq_api_key),
+            "google": bool(settings.google_api_key),
         },
         "budget_usd": settings.omniforge_budget_usd,
         "tools": list_tools(),

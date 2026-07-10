@@ -14,4 +14,4 @@ services:
       - key: OMNIFORGE_MODE
         value: mock
       - key: CORS_ORIGINS
-        value: https://omniforge.vercel.app,https://venkat-ai.com
+        value: https://omniforge.vercel.app,https://venkat-ai.com,http://localhost:3000

@@ -15,11 +15,13 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     anthropic_api_key: str = ""
     groq_api_key: str = ""
+    google_api_key: str = ""
 
     omniforge_fast_model: str = "llama-3.3-70b-versatile"
     omniforge_structured_model: str = "gpt-4o-mini"
     omniforge_reasoning_model: str = "claude-sonnet-4-20250514"
     omniforge_vision_model: str = "gpt-4o"
+    omniforge_google_model: str = "gemini-2.0-flash"
 
     omniforge_budget_usd: float = 0.50
     qdrant_url: str = ""

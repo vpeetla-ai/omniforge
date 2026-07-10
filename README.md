@@ -86,10 +86,14 @@ Set `NEXT_PUBLIC_API_URL=http://localhost:8080`.
 
 ## Deploy
 
-| Layer | Host | Notes |
-|-------|------|-------|
-| UI | Vercel (`ui/`) | Static export |
-| API | Render (`render.yaml`) | Free tier cold start ~30s |
+| Layer | Host | URL |
+|-------|------|-----|
+| API | Render | https://omniforge-api.onrender.com |
+| UI | Vercel (`ui/`, static export) | set Root Directory = `ui`, Output = `out`, Framework = Other |
+
+**Vercel manual settings:** Root Directory `ui` · Framework Preset **Other** · Build `npm run build` · Output `out` · Env `NEXT_PUBLIC_API_URL=https://omniforge-api.onrender.com`
+
+See [docs/DEPLOY.md](docs/DEPLOY.md). Do not use the default Next.js serverless preset with this static export.
 
 ## Docs
 
