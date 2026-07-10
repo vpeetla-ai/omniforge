@@ -145,6 +145,7 @@ async def complete(
 
 
 async def _try_providers(candidates, system, user, image_b64, settings, step, bucket):
+    errors: list[str] = []
     for provider, model_id in candidates:
         if provider == "mock" or model_id == "mock":
             return _mock_complete(step, system, user, bucket), True, "mock", "mock"
@@ -161,9 +162,13 @@ async def _try_providers(candidates, system, user, image_b64, settings, step, bu
             if provider == "groq" and settings.groq_api_key:
                 text = await _groq(settings, model_id, system, user)
                 return text, False, provider, model_id
-        except Exception:
+        except Exception as exc:  # noqa: BLE001 — cascade to next provider
+            errors.append(f"{provider}:{type(exc).__name__}")
             continue
-    return _mock_complete(step, system, user, bucket), True, "mock", "mock"
+    text = _mock_complete(step, system, user, bucket)
+    if errors:
+        text = f"{text}\n\n[cascade misses: {', '.join(errors)}]"
+    return text, True, "mock", "mock"
 
 
 async def _openai(settings, model_id, system, user, image_b64):

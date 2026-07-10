@@ -12,6 +12,8 @@ services:
       - key: APP_ENV
         value: production
       - key: OMNIFORGE_MODE
-        value: mock
+        value: live
       - key: CORS_ORIGINS
-        value: https://omniforge.vercel.app,https://venkat-ai.com,http://localhost:3000
+        value: https://omniforge-flame.vercel.app,https://omniforge.vercel.app,https://venkat-ai.com,http://localhost:3000
+      - key: OMNIFORGE_GOOGLE_MODEL
+        value: gemini-2.0-flash
