@@ -12,9 +12,9 @@
 
 **Ask anything. Right agents. Right models.**
 
-Self-contained **multimodal multi-agent multi-LLM** answer platform — text, image/screenshot, and voice fan out across specialized agents and MCP tools, with a live **model waterfall** proving which model ran each step.
+Self-contained **or plane-connected** multimodal multi-agent multi-LLM answer platform — text, image/screenshot, and voice fan out across specialized agents and MCP tools, with a live **model waterfall** proving which model ran each step.
 
-> **Self-contained:** no runtime dependency on other vpeetla-ai services. FinOps ledger, policy gate, RAG, voice ingest, and MCP bridge all live in this monorepo.
+> **Self-contained OR plane-connected:** runs standalone with an in-repo provider waterfall (no sibling services required). Optionally set `LLM_GATEWAY_URL` to route completions via [aegis-llm-gateway](https://github.com/vpeetla-ai/aegis-llm-gateway); export gate, FinOps, RAG, and MCP stay in-repo.
 
 [▶ Live demo](https://omniforge-flame.vercel.app) · [API health](https://omniforge-api.onrender.com/health) · [Architecture](docs/ARCHITECTURE.md) · [ADR-027](https://github.com/vpeetla-ai/ai-architecture-portfolio/blob/main/adr/ADR-027-omniforge-self-contained-multimodal-multi-llm.md)
 
@@ -87,6 +87,7 @@ flowchart TB
 | Planner fan-out | ✅ | Selects vision/web/api/data/analysis + MCP tools |
 | Multi-LLM Brain (task-class buckets) | ✅ | fast / structured / reasoning / vision |
 | Provider cascade (Groq / OpenAI / Anthropic / Google / mock) | ✅ | Missing keys fall through; mock never claimed as live |
+| LLM gateway plane | ✅ | Optional `LLM_GATEWAY_URL` → [aegis-llm-gateway](https://github.com/vpeetla-ai/aegis-llm-gateway); falls back to in-repo cascade |
 | Parallel agents + synthesizer | ✅ | Async gather mid-agents |
 | In-process MCP tool bridge | ✅ | time, echo, calc, allowlisted http_get |
 | In-memory RAG | ✅ | Qdrant URL optional |
@@ -140,7 +141,7 @@ See [docs/DEPLOY.md](docs/DEPLOY.md). Framework Preset **Other**, Output **`out`
 
 ## Interview map
 
-**Business function:** Self-contained multimodal multi-agent multi-LLM answer platform (text / image / voice).
+**Business function:** Self-contained or plane-connected multimodal multi-agent multi-LLM answer platform (text / image / voice).
 
 Staff+ prep crosswalk — [playbook](https://github.com/vpeetla-ai/ai-architect-interview-playbook) · [study UI](https://ai-architect-interview-playbook.vercel.app) · [Practice Arena](https://ai-architect-practice-arena.vercel.app) · [org matrix](https://github.com/vpeetla-ai/ai-architecture-portfolio/blob/main/docs/REPO_INTERVIEW_MAP.md). Only entries this repo honestly exercises.
 
@@ -148,7 +149,7 @@ Staff+ prep crosswalk — [playbook](https://github.com/vpeetla-ai/ai-architect-
 |----------|-------|-----|
 | System design | [Agent orchestration](https://ai-architect-interview-playbook.vercel.app/q/ai-system-design/03-agent-tool-use-orchestration-platform/) ([md](https://github.com/vpeetla-ai/ai-architect-interview-playbook/blob/main/ai-system-design/03-agent-tool-use-orchestration-platform.md)) | Planner + specialized agents + MCP tools |
 | System design | [Multimodal search / recommendation](https://ai-architect-interview-playbook.vercel.app/q/ai-system-design/06-multimodal-search-recommendation-system/) ([md](https://github.com/vpeetla-ai/ai-architect-interview-playbook/blob/main/ai-system-design/06-multimodal-search-recommendation-system.md)) | Partial — multimodal ingest/answer, not full recsys |
-| Cloud | [LLM gateway / model router](https://ai-architect-interview-playbook.vercel.app/q/cloud-architecture/07-llm-gateway-semantic-cache-model-router/) ([md](https://github.com/vpeetla-ai/ai-architect-interview-playbook/blob/main/cloud-architecture/07-llm-gateway-semantic-cache-model-router.md)) | In-repo model waterfall / routing |
+| Cloud | [LLM gateway / model router](https://ai-architect-interview-playbook.vercel.app/q/cloud-architecture/07-llm-gateway-semantic-cache-model-router/) ([md](https://github.com/vpeetla-ai/ai-architect-interview-playbook/blob/main/cloud-architecture/07-llm-gateway-semantic-cache-model-router.md)) | Optional `LLM_GATEWAY_URL` → aegis-llm-gateway; in-repo waterfall fallback |
 | Trade-offs | [Cost vs latency vs safety](https://ai-architect-interview-playbook.vercel.app/q/scalability-governance-tradeoffs/01-cost-vs-latency-vs-safety/) ([md](https://github.com/vpeetla-ai/ai-architect-interview-playbook/blob/main/scalability-governance-tradeoffs/01-cost-vs-latency-vs-safety.md)) | Model choice per step under budget |
 
 ## Docs

@@ -32,6 +32,11 @@ def estimate_cost(model_id: str, tokens_in: int, tokens_out: int) -> float:
     return (tokens_in * pin + tokens_out * pout) / 1_000_000
 
 
+def llm_gateway_enabled(settings: Settings | None = None) -> bool:
+    settings = settings or get_settings()
+    return bool((settings.llm_gateway_url or "").strip())
+
+
 def _cascade_for(bucket: RouteBucket, settings: Settings) -> list[tuple[str, str]]:
     """Ordered (provider, model_id) candidates."""
     if bucket == RouteBucket.FAST:
@@ -123,6 +128,15 @@ async def complete(
         candidates = _cascade_for(bucket, settings)
         if not settings.live:
             candidates = [("mock", "mock")]
+        elif llm_gateway_enabled(settings):
+            # Plane-connected: try gateway first, then in-repo provider cascade.
+            model_for_bucket = {
+                RouteBucket.FAST: settings.omniforge_fast_model,
+                RouteBucket.STRUCTURED: settings.omniforge_structured_model,
+                RouteBucket.REASONING: settings.omniforge_reasoning_model,
+                RouteBucket.VISION: settings.omniforge_vision_model,
+            }.get(bucket, "stub-small")
+            candidates = [("gateway", model_for_bucket), *candidates]
         text, mocked, provider, model_id = await _try_providers(
             candidates, system, user, image_b64, settings, step, bucket
         )
@@ -150,6 +164,9 @@ async def _try_providers(candidates, system, user, image_b64, settings, step, bu
         if provider == "mock" or model_id == "mock":
             return _mock_complete(step, system, user, bucket), True, "mock", "mock"
         try:
+            if provider == "gateway" and llm_gateway_enabled(settings):
+                text = await _gateway(settings, model_id, system, user, image_b64)
+                return text, False, "aegis-llm-gateway", model_id
             if provider == "openai" and settings.openai_api_key:
                 text = await _openai(settings, model_id, system, user, image_b64)
                 return text, False, provider, model_id
@@ -169,6 +186,37 @@ async def _try_providers(candidates, system, user, image_b64, settings, step, bu
     if errors:
         text = f"{text}\n\n[cascade misses: {', '.join(errors)}]"
     return text, True, "mock", "mock"
+
+
+async def _gateway(settings, model_id, system, user, image_b64):
+    """OpenAI-compatible completions via aegis-llm-gateway (optional plane connection)."""
+    from openai import AsyncOpenAI
+
+    client = AsyncOpenAI(
+        api_key=settings.llm_gateway_api_key or "omniforge-gateway",
+        base_url=settings.llm_gateway_url.rstrip("/"),
+        default_headers={"X-Tenant-Id": settings.llm_gateway_tenant_id or "omniforge"},
+    )
+    content: list | str
+    if image_b64:
+        content = [
+            {"type": "text", "text": user},
+            {
+                "type": "image_url",
+                "image_url": {"url": f"data:image/png;base64,{image_b64}"},
+            },
+        ]
+    else:
+        content = user
+    resp = await client.chat.completions.create(
+        model=model_id or "stub-small",
+        messages=[
+            {"role": "system", "content": system},
+            {"role": "user", "content": content},
+        ],
+        max_tokens=1200,
+    )
+    return resp.choices[0].message.content or ""
 
 
 async def _openai(settings, model_id, system, user, image_b64):

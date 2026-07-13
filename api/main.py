@@ -51,19 +51,29 @@ def health():
 
 @app.get("/v1/ops/metrics")
 def metrics():
+    s = get_settings()
+    gateway_on = bool((s.llm_gateway_url or "").strip())
     return {
         "service": "omniforge",
-        "mode": settings.omniforge_mode,
+        "mode": s.omniforge_mode,
         "providers": {
-            "openai": bool(settings.openai_api_key),
-            "anthropic": bool(settings.anthropic_api_key),
-            "groq": bool(settings.groq_api_key),
-            "google": bool(settings.google_api_key),
+            "openai": bool(s.openai_api_key),
+            "anthropic": bool(s.anthropic_api_key),
+            "groq": bool(s.groq_api_key),
+            "google": bool(s.google_api_key),
         },
-        "budget_usd": settings.omniforge_budget_usd,
+        "budget_usd": s.omniforge_budget_usd,
         "tools": list_tools(),
-        "qdrant_configured": bool(settings.qdrant_url),
-        "langfuse_configured": bool(settings.langfuse_public_key),
+        "qdrant_configured": bool(s.qdrant_url),
+        "langfuse_configured": bool(s.langfuse_public_key),
+        "extra": {
+            "llm_gateway": {
+                "enabled": gateway_on,
+                "url_configured": gateway_on,
+                "tenant_id": s.llm_gateway_tenant_id if gateway_on else None,
+                "plane": "aegis-llm-gateway",
+            }
+        },
     }
 
 

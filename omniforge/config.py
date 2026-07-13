@@ -1,4 +1,4 @@
-"""Environment settings — self-contained; no sibling repo URLs required."""
+"""Environment settings — self-contained by default; optional plane connection via LLM_GATEWAY_URL."""
 from __future__ import annotations
 
 from functools import lru_cache
@@ -16,6 +16,11 @@ class Settings(BaseSettings):
     anthropic_api_key: str = ""
     groq_api_key: str = ""
     google_api_key: str = ""
+
+    # Federated LLM gateway plane (aegis-llm-gateway) — optional; preferred when set
+    llm_gateway_url: str = ""  # e.g. http://127.0.0.1:8100/v1
+    llm_gateway_api_key: str = ""
+    llm_gateway_tenant_id: str = "omniforge"
 
     omniforge_fast_model: str = "llama-3.3-70b-versatile"
     omniforge_structured_model: str = "gpt-4o-mini"
