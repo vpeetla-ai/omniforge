@@ -9,6 +9,24 @@ services:
     autoDeploy: true
     branch: main
     envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: AGENTFINOPS_API_KEY
+        sync: false
+      - key: AGENTFINOPS_URL
+        value: https://agent-finops-api.onrender.com
+      - key: LLM_GATEWAY_TENANT_ID
+        value: omniforge
+      - key: LLM_GATEWAY_API_KEY
+        sync: false
+      - key: LLM_GATEWAY_URL
+        value: https://aegis-llm-gateway-api.onrender.com/v1
       - key: APP_ENV
         value: production
       - key: OMNIFORGE_MODE

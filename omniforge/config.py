@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     llm_gateway_url: str = ""  # e.g. http://127.0.0.1:8100/v1
     llm_gateway_api_key: str = ""
     llm_gateway_tenant_id: str = "omniforge"
+    llm_gateway_principal_id: str = ""  # optional X-Principal-Id
 
     # Optional FinOps outcome KPI (ADR-029)
     agentfinops_url: str = ""  # e.g. http://127.0.0.1:8000

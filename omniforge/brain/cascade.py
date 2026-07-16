@@ -232,6 +232,8 @@ async def _gateway(settings, model_id, system, user, image_b64, *, step="analysi
         headers["X-Generator-Provider"] = generator_provider
     if thesis == "verifier":
         headers["X-Cache-Bypass"] = "true"
+    if getattr(settings, "llm_gateway_principal_id", ""):
+        headers["X-Principal-Id"] = settings.llm_gateway_principal_id
 
     client = AsyncOpenAI(
         api_key=settings.llm_gateway_api_key or "omniforge-gateway",
