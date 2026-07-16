@@ -2,14 +2,18 @@
 
 **Ask anything. Right agents. Right models.**
 
-OmniForge is a **self-contained** multimodal multi-agent multi-LLM answer platform. One monorepo owns ingest → plan → fan-out → Multi-LLM Brain → synthesize → proof. It does **not** call other vpeetla-ai services at runtime.
+OmniForge is a multimodal multi-agent multi-LLM answer platform. One monorepo owns ingest → plan → fan-out → Multi-LLM Brain → synthesize → proof.
+
+**Default:** self-contained — in-repo provider waterfall, FinOps ledger, and policy gate (no sibling services required).
+
+**Optional plane-connected mode:** set `LLM_GATEWAY_URL` / `AGENTFINOPS_URL` to use the org LLM + FinOps planes ([ADR-028](https://github.com/vpeetla-ai/ai-architecture-portfolio/blob/main/adr/ADR-028-federated-ai-control-plane-k8s-analogy.md) / [ADR-029](https://github.com/vpeetla-ai/ai-architecture-portfolio/blob/main/adr/ADR-029-app-owned-role-aware-routing-contract.md)). OmniForge still **selects** buckets; the gateway **enforces + records**.
 
 | | |
 |--|--|
 | **Live UI** | [omniforge-flame.vercel.app](https://omniforge-flame.vercel.app) |
 | **API** | [omniforge-api.onrender.com](https://omniforge-api.onrender.com/health) |
 | **Repo ADR** | [ADR-001](adr/ADR-001-omniforge-self-contained-multimodal-multi-llm.md) |
-| **Portfolio ADR** | [ADR-027](https://github.com/vpeetla-ai/ai-architecture-portfolio/blob/main/adr/ADR-027-omniforge-self-contained-multimodal-multi-llm.md) |
+| **Portfolio ADR** | [ADR-027](https://github.com/vpeetla-ai/ai-architecture-portfolio/blob/main/adr/ADR-027-omniforge-self-contained-multimodal-multi-llm.md) · [ADR-029](https://github.com/vpeetla-ai/ai-architecture-portfolio/blob/main/adr/ADR-029-app-owned-role-aware-routing-contract.md) |
 
 ---
 
@@ -59,6 +63,8 @@ flowchart TB
     Fin["In-repo FinOps ledger"]
     Gate["In-repo policy HITL gate"]
     LF["Langfuse optional"]
+    PlaneGW["Optional aegis-llm-gateway"]
+    PlaneFin["Optional agent-finops outcomes KPI"]
   end
   subgraph out [Answer]
     Synth["Synthesizer"]
@@ -86,6 +92,8 @@ flowchart TB
   MCP --> Synth
   Brain --> Waterfall
   Brain --> Fin
+  Brain -.-> PlaneGW
+  Synth -.-> PlaneFin
   Synth --> Gate
   Synth --> UI
   Synth --> VoiceOut
@@ -111,11 +119,11 @@ API: `POST /v1/ask` · A/B: `POST /v1/ask/ab`
 ## Core design decisions
 
 1. **Universal Ask** — War Room / Incident / Chart are presets, not separate products.
-2. **Task-class multi-LLM routing** — agents request a `RouteBucket`; Brain resolves provider; never hardcode a model in an agent node.
-3. **In-repo everything** — FinOps ledger, policy gate, RAG, MCP bridge, voice ingest live here (may be thinner than sibling products; status table is honest).
+2. **Task-class multi-LLM routing** — agents request a `RouteBucket`; Brain resolves provider; never hardcode a model in an agent node. OmniForge **selects**; optional gateway **enforces** (ADR-029).
+3. **In-repo defaults** — FinOps ledger, policy gate, RAG, MCP bridge, voice ingest live here; optional `LLM_GATEWAY_URL` / `AGENTFINOPS_URL` for plane-connected demos.
 4. **A/B is first-class** — same graph, `mode=single|routed`.
 5. **Fail-closed profile** — `PRODUCTION_STRICT` denies export without gate approval; demo may fail-open with labels.
-6. **No sibling runtime deps** — OpenAI / Anthropic / Groq / Google are external providers, not org repos.
+6. **Providers vs org siblings** — OpenAI / Anthropic / Groq / Google are external providers. Org planes (gateway, FinOps) are **optional** runtime deps when env is set — not required for standalone mock demos.
 
 ---
 

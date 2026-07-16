@@ -87,7 +87,7 @@ flowchart TB
 | Planner fan-out | ✅ | Selects vision/web/api/data/analysis + MCP tools |
 | Multi-LLM Brain (task-class buckets) | ✅ | fast / structured / reasoning / vision |
 | Provider cascade (Groq / OpenAI / Anthropic / Google / mock) | ✅ | Missing keys fall through; mock never claimed as live |
-| LLM gateway plane | ✅ | Optional `LLM_GATEWAY_URL` → [aegis-llm-gateway](https://github.com/vpeetla-ai/aegis-llm-gateway); falls back to in-repo cascade |
+| LLM gateway plane | ✅ | Optional `LLM_GATEWAY_URL` → [aegis-llm-gateway](https://github.com/vpeetla-ai/aegis-llm-gateway); OmniForge **selects** buckets, gateway **enforces+records** (ADR-029); falls back to in-repo cascade |
 | Parallel agents + synthesizer | ✅ | Async gather mid-agents |
 | In-process MCP tool bridge | ✅ | time, echo, calc, allowlisted http_get |
 | In-memory RAG | ✅ | Qdrant URL optional |
