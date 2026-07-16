@@ -11,6 +11,8 @@ async def test_ask_mock():
     resp = await run_ask(MissionInput(text="Compare Groq vs OpenAI for agent routing"), settings)
     assert resp.answer
     assert "synthesizer" in resp.agents_run
+    assert "verifier" in resp.agents_run
+    assert any(d.step == "verifier" and d.thesis_role == "verifier" for d in resp.waterfall)
     assert len(resp.waterfall) >= 3
     assert all(d.step for d in resp.waterfall)
     # routed mode should use different buckets across steps

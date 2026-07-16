@@ -76,6 +76,13 @@ async def run_ask(inp: MissionInput, settings: Settings | None = None) -> AskRes
             waterfall.append(ar.routing)
             ledger.record(ar.routing)
 
+    # Verifier before synthesizer — independent provider (ADR-029)
+    vr = await runners.run_verifier(mission, results, settings)
+    results.append(vr)
+    if vr.routing:
+        waterfall.append(vr.routing)
+        ledger.record(vr.routing)
+
     synth = await runners.run_synthesizer(mission, results, settings)
     results.append(synth)
     if synth.routing:
@@ -88,7 +95,7 @@ async def run_ask(inp: MissionInput, settings: Settings | None = None) -> AskRes
         mission_id=mission.mission_id,
         answer=synth.summary,
         modalities=mission.modalities,
-        agents_run=agents + ["synthesizer"],
+        agents_run=agents + ["verifier", "synthesizer"],
         tools_run=tools,
         waterfall=waterfall,
         agent_results=results,

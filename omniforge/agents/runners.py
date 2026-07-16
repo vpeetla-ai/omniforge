@@ -128,6 +128,32 @@ async def run_analysis(mission: Mission, prior: list[AgentResult], settings: Set
     return AgentResult(agent="analysis", summary=result.text[:800], routing=result.decision)
 
 
+async def run_verifier(mission: Mission, prior: list[AgentResult], settings: Settings) -> AgentResult:
+    """Thesis role: verifier — must use a different provider than analysis/generator."""
+    bucket = bucket_for_agent("verifier")
+    prior_txt = "\n".join(f"- {r.agent}: {r.summary}" for r in prior)
+    gen_provider = None
+    for r in reversed(prior):
+        if r.routing and r.agent in {"analysis", "web", "api", "data", "vision"}:
+            gen_provider = r.routing.provider
+            break
+    result = await complete(
+        step="verifier",
+        bucket=bucket,
+        system=(
+            "You are the Verifier/Critic agent. Check for hallucination risk, weak evidence, "
+            "and unsafe claims. Output: (1) Quality 0-10 (2) Issues (3) Fixes if score < 7."
+        ),
+        user=f"Mission: {mission.question}\n\nDraft findings to verify:\n{prior_txt}",
+        reason="Independent verifier intelligence — different provider than generator (ADR-029)",
+        mode_single_model=_single(mission),
+        settings=settings,
+        generator_provider=gen_provider or "stub",
+        workflow_id=mission.mission_id,
+    )
+    return AgentResult(agent="verifier", summary=result.text[:800], routing=result.decision)
+
+
 async def run_synthesizer(mission: Mission, prior: list[AgentResult], settings: Settings) -> AgentResult:
     bucket = bucket_for_agent("synthesizer")
     prior_txt = "\n".join(f"- {r.agent}: {r.summary}" for r in prior)
