@@ -8,6 +8,7 @@ import time
 from omniforge.agents import runners
 from omniforge.config import Settings, get_settings
 from omniforge.finops.ledger import BudgetLedger
+from omniforge.finops.outcomes import record_ask_outcome
 from omniforge.ingest.normalize import normalize
 from omniforge.mcp.bridge import call_tool
 from omniforge.models import AskResponse, MissionInput, RouteMode, RoutingDecision
@@ -83,7 +84,7 @@ async def run_ask(inp: MissionInput, settings: Settings | None = None) -> AskRes
 
     total_ms = (time.perf_counter() - t0) * 1000
     mocked = any(d.mocked for d in waterfall) or settings.omniforge_mode == "mock"
-    return AskResponse(
+    resp = AskResponse(
         mission_id=mission.mission_id,
         answer=synth.summary,
         modalities=mission.modalities,
@@ -97,6 +98,8 @@ async def run_ask(inp: MissionInput, settings: Settings | None = None) -> AskRes
         budget_halted=ledger.halted,
         mocked=mocked,
     )
+    await record_ask_outcome(resp, settings)
+    return resp
 
 
 def _halted(mission, agents, tools, waterfall, results, t0, ledger):

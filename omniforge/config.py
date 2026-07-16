@@ -22,6 +22,10 @@ class Settings(BaseSettings):
     llm_gateway_api_key: str = ""
     llm_gateway_tenant_id: str = "omniforge"
 
+    # Optional FinOps outcome KPI (ADR-029)
+    agentfinops_url: str = ""  # e.g. http://127.0.0.1:8000
+    agentfinops_api_key: str = ""
+
     omniforge_fast_model: str = "llama-3.3-70b-versatile"
     omniforge_structured_model: str = "gpt-4o-mini"
     omniforge_reasoning_model: str = "claude-sonnet-4-20250514"
