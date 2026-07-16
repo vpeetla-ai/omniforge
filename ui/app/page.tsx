@@ -11,6 +11,9 @@ type RoutingDecision = {
   latency_ms: number;
   cost_usd: number;
   mocked: boolean;
+  thesis_role?: string | null;
+  model_tier?: string | null;
+  data_class?: string;
 };
 
 type AskResponse = {
@@ -226,7 +229,7 @@ export default function HomePage() {
               {result.waterfall.map((w, i) => (
                 <li key={`${w.step}-${i}`} style={{ animationDelay: `${i * 60}ms` }}>
                   <div className="step-name">
-                    {w.step} · {w.bucket}
+                    {w.step} · {w.bucket}{w.thesis_role ? ` / ${w.thesis_role}` : ''}{w.model_tier ? ` / ${w.model_tier}` : ''}
                   </div>
                   <div className="step-model">
                     {w.provider} / {w.model_id}

@@ -5,6 +5,7 @@ import time
 from dataclasses import dataclass
 
 from omniforge.config import Settings, get_settings
+from omniforge.brain.policy import thesis_role_for_agent, tier_for_bucket
 from omniforge.models import RouteBucket, RoutingDecision
 
 
@@ -101,6 +102,9 @@ async def complete(
     mode_single_model: str | None = None,
     image_b64: str | None = None,
     settings: Settings | None = None,
+    data_class: str = "internal",
+    generator_provider: str | None = None,
+    workflow_id: str | None = None,
 ) -> LLMResult:
     settings = settings or get_settings()
     t0 = time.perf_counter()
@@ -123,6 +127,9 @@ async def complete(
                 settings,
                 step,
                 bucket,
+                data_class=data_class,
+                generator_provider=generator_provider,
+                workflow_id=workflow_id,
             )
     else:
         candidates = _cascade_for(bucket, settings)
@@ -138,7 +145,9 @@ async def complete(
             }.get(bucket, "stub-small")
             candidates = [("gateway", model_for_bucket), *candidates]
         text, mocked, provider, model_id = await _try_providers(
-            candidates, system, user, image_b64, settings, step, bucket
+            candidates, system, user, image_b64, settings, step, bucket,
+            data_class=data_class, generator_provider=generator_provider,
+            workflow_id=workflow_id,
         )
 
     latency = (time.perf_counter() - t0) * 1000
@@ -154,18 +163,26 @@ async def complete(
         tokens_out=tout,
         cost_usd=round(estimate_cost(model_id, tin, tout), 6),
         mocked=mocked,
+        thesis_role=thesis_role_for_agent(step),
+        model_tier=tier_for_bucket(bucket),
+        data_class=data_class,
+        generator_provider=generator_provider,
     )
     return LLMResult(text=text, decision=decision)
 
 
-async def _try_providers(candidates, system, user, image_b64, settings, step, bucket):
+async def _try_providers(candidates, system, user, image_b64, settings, step, bucket, data_class='internal', generator_provider=None, workflow_id=None):
     errors: list[str] = []
     for provider, model_id in candidates:
         if provider == "mock" or model_id == "mock":
             return _mock_complete(step, system, user, bucket), True, "mock", "mock"
         try:
             if provider == "gateway" and llm_gateway_enabled(settings):
-                text = await _gateway(settings, model_id, system, user, image_b64)
+                text = await _gateway(
+                    settings, model_id, system, user, image_b64,
+                    step=step, bucket=bucket, data_class=data_class,
+                    generator_provider=generator_provider, workflow_id=workflow_id,
+                )
                 return text, False, "aegis-llm-gateway", model_id
             if provider == "openai" and settings.openai_api_key:
                 text = await _openai(settings, model_id, system, user, image_b64)
@@ -188,14 +205,38 @@ async def _try_providers(candidates, system, user, image_b64, settings, step, bu
     return text, True, "mock", "mock"
 
 
-async def _gateway(settings, model_id, system, user, image_b64):
+async def _gateway(settings, model_id, system, user, image_b64, *, step="analysis",
+                   bucket=None, data_class="internal", generator_provider=None, workflow_id=None):
     """OpenAI-compatible completions via aegis-llm-gateway (optional plane connection)."""
     from openai import AsyncOpenAI
+    from omniforge.brain.policy import thesis_role_for_agent, tier_for_bucket
+    from omniforge.models import RouteBucket as RB
+
+    bucket = bucket or RB.REASONING
+    thesis = thesis_role_for_agent(step)
+    # Verifier must use a different selected provider than the generator (ADR-029).
+    selected = "gemini" if thesis == "verifier" else "stub"
+    if thesis == "verifier" and (generator_provider or "").lower() == "gemini":
+        selected = "groq"
+    headers = {
+        "X-Tenant-Id": settings.llm_gateway_tenant_id or "omniforge",
+        "X-Agent-Role": step,
+        "X-Thesis-Role": thesis,
+        "X-Data-Class": data_class,
+        "X-Selected-Provider": selected,
+        "X-Model-Tier": tier_for_bucket(bucket),
+    }
+    if workflow_id:
+        headers["X-Workflow-Id"] = workflow_id
+    if generator_provider:
+        headers["X-Generator-Provider"] = generator_provider
+    if thesis == "verifier":
+        headers["X-Cache-Bypass"] = "true"
 
     client = AsyncOpenAI(
         api_key=settings.llm_gateway_api_key or "omniforge-gateway",
         base_url=settings.llm_gateway_url.rstrip("/"),
-        default_headers={"X-Tenant-Id": settings.llm_gateway_tenant_id or "omniforge"},
+        default_headers=headers,
     )
     content: list | str
     if image_b64:

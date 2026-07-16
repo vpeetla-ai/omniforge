@@ -38,6 +38,10 @@ class RoutingDecision(BaseModel):
     tokens_out: int = 0
     cost_usd: float = 0.0
     mocked: bool = False
+    thesis_role: str | None = None
+    model_tier: str | None = None
+    data_class: str = "internal"
+    generator_provider: str | None = None
 
 
 class AgentResult(BaseModel):
